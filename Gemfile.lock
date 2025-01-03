@@ -1,3 +1,12 @@
+GIT
+  remote: https://github.com/rgeo/activerecord-postgis-adapter.git
+  revision: 147fd43191ef703e2a1b3654f31d9139201a87e8
+  ref: 147fd43191ef703e2a1b3654f31d9139201a87e8
+  specs:
+    activerecord-postgis-adapter (10.0.1)
+      activerecord (~> 8.0.0)
+      rgeo-activerecord (~> 8.0.0)
+
 GEM
   remote: https://rubygems.org/
   specs:
@@ -244,6 +253,10 @@ GEM
     responders (3.1.1)
       actionpack (>= 5.2)
       railties (>= 5.2)
+    rgeo (3.0.1)
+    rgeo-activerecord (8.0.0)
+      activerecord (>= 7.0)
+      rgeo (>= 3.0)
     rubocop (1.69.2)
       json (~> 2.3)
       language_server-protocol (>= 3.17.0)
@@ -332,6 +345,7 @@ PLATFORMS
   x86_64-linux-musl
 
 DEPENDENCIES
+  activerecord-postgis-adapter!
   bootsnap
   brakeman
   debug
@@ -343,6 +357,7 @@ DEPENDENCIES
   puma (>= 5.0)
   rack-cors
   rails (~> 8.0.1)
+  rgeo
   rubocop-rails-omakase
   solid_cable
   solid_cache

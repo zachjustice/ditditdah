@@ -13,11 +13,14 @@
 # gem "pg"
 #
 default: &default
-  adapter: postgresql
+  # using postgis adapter for storing signal data and who is close to signals
+  adapter: postgis
+  # adapter: postgres
   encoding: unicode
   # For details on connection pooling, see Rails configuration guide
   # https://guides.rubyonrails.org/configuring.html#database-pooling
   pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+
 
 
 development:

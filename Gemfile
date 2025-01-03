@@ -44,6 +44,16 @@ gem "devise-jwt"
 # jsonapi-serializer is a gem that will serialize ruby objects in JSON format
 gem "jsonapi-serializer"
 
+# Core component to support geospatial objects, handle geometry, parse additional datatypes (WKT, WKB, Multipolygons).
+gem "rgeo"
+
+# Enables PostGIS database features to work within ActiveRecord — provides additional migrations, allows spatial data in queries etc.
+gem "activerecord-postgis-adapter", git: "https://github.com/rgeo/activerecord-postgis-adapter.git", ref: "147fd43191ef703e2a1b3654f31d9139201a87e8"
+
+# Provides additional extensions and helpers for ActiveRecord.
+# https://github.com/rgeo/rgeo-activerecord/wiki/Spatial-Factory-Store
+# gem 'rgeo-activerecord'
+
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"
