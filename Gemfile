@@ -54,6 +54,8 @@ gem "activerecord-postgis-adapter", git: "https://github.com/rgeo/activerecord-p
 # https://github.com/rgeo/rgeo-activerecord/wiki/Spatial-Factory-Store
 # gem 'rgeo-activerecord'
 
+gem "geokit"
+
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"
