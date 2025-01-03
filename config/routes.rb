@@ -25,6 +25,9 @@ Rails.application.routes.draw do
     namespace :v1 do
       get "/messages/:id", to: "messages#show"
       resource :messages, only: [ :update ]
+      authenticate do
+        get "/receive", to: "receive#index"
+      end
     end
   end
 end
