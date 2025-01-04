@@ -24,20 +24,6 @@ module Api::V1
       )
 
       if message.save
-        geohash = GeoHash.encode(lat, long, 6)
-        logger.debug("Sending message to geohash #{geohash}")
-        MessagesChannel.broadcast_to(
-          geohash,
-          {
-            id: message.id,
-            start: {
-              lat: message.start.latitude,
-              long: message.start.longitude },
-            true_heading: message.true_heading,
-            created_at: message.created_at
-          }
-        )
-
         render json: {
           status: { code: 200, message: "Success" },
           data: { id: message.id }

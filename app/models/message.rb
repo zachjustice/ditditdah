@@ -7,6 +7,8 @@ class Message < ApplicationRecord
   validates :bbox, presence: true
   validates :true_heading, numericality: true
 
+  after_create_commit { MessageBroadcastJob.perform_later self }
+
   def self.near(point, distance)
     where(
       "ST_DWithin(start, :point, :distance)",
