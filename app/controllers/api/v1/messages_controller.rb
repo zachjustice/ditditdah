@@ -50,7 +50,7 @@ module Api::V1
             current_position: {
               lat: current_position.latitude,
               long: current_position.longitude,
-              timestamp: Time.now.utc.iso8601
+              timestamp: Time.current.iso8601
             },
             end: {
               lat: message.end.latitude,
