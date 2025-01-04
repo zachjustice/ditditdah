@@ -42,5 +42,8 @@ module Ditditdash
     config.api_only = true
 
     config.time_zone = "UTC"
+
+    # Configure Rails Event Store client
+    config.to_prepare { Rails.configuration.event_store = RailsEventStore::Client.new }
   end
 end

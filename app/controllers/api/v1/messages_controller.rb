@@ -24,6 +24,20 @@ module Api::V1
       )
 
       if message.save
+        geohash = GeoHash.encode(lat, long, 6)
+        logger.debug("Sending message to geohash #{geohash}")
+        MessagesChannel.broadcast_to(
+          geohash,
+          {
+            id: message.id,
+            start: {
+              lat: message.start.latitude,
+              long: message.start.longitude },
+            true_heading: message.true_heading,
+            created_at: message.created_at
+          }
+        )
+
         render json: {
           status: { code: 200, message: "Success" },
           data: { id: message.id }
@@ -38,7 +52,6 @@ module Api::V1
       start_point = Geokit::LatLng.new(message.start.latitude, message.start.longitude)
       current_position = GeoCalculations.calculate_current_position(message.created_at, start_point, message.true_heading, MessageConstants::MESSAGE_SPEED_MPS, MessageConstants::MESSAGE_DISTANCE_METERS) || message.end
 
-      # TODO calculate current position of the signal
       if message
         render json: {
           status: { code: 200, message: "Success." },
@@ -90,6 +103,10 @@ module Api::V1
           factory.point(start_left.lng, start_left.lat)  # Close the polygon
         ])
       )
+    end
+
+    def event_store
+      Rails.configuration.event_store
     end
   end
 end

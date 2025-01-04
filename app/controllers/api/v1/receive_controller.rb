@@ -1,3 +1,5 @@
+require "rufus-scheduler"
+
 module Api::V1
   class ReceiveController < ApplicationController
     include ActionController::Live
@@ -13,39 +15,81 @@ module Api::V1
       sse = SSE.new(response.stream, event: "receive-messages", retry: 300)
       sse.write("STREAM OPEN")
 
-      stream_endtime = 90.minutes.from_now
       messages = get_upcoming_messages(lat, long)
+      stream_endtime = 90.minutes.from_now
       sent_messages = Set.new
-      puts(messages)
-      next_message_time = messages.keys.min
-      next_message_id = messages[next_message_time].id
-      while Time.current < stream_endtime do
-        puts "Next message in #{(next_message_time - Time.current)/60} minutes at #{next_message_time}"
-        # Make sure the next message hasn't been sent yet
-        while sent_messages.include?(next_message_id)
-          messages.delete(next_message_time)
-          next_message_time = messages.keys.min
-          next_message_id = messages[next_message_time].id
-        end
+      puts(messages.keys.inspect)
 
-        if (Time.current - next_message_time).abs < 1.minutes.to_s
-          # The message is close, go ahead and send it to the client
-          m = messages[next_message_time]
-          sse.write("#{m.id} #{m.start.latitude} #{m.start.longitude} #{next_message_time}")
-          sent_messages.add(m.id)
+      unsubscribe = Rails.configuration.event_store.subscribe(to: [ MessageSent ]) { |event|
+        puts("### RECEIVED EVENT: #{event.inspect}")
+      }
 
-          # Get the next message
-          next_message_time = messages.keys.min
-          next_message_id = messages[next_message_time].id
-
-          if (Time.current - next_message_time).abs > 30
-            sleep 30
-          end
+      scheduler = Rufus::Scheduler.new
+      messages.each do |arrival_time, message|
+        scheduled_time = Time.at(arrival_time)
+        logger.debug("### scheduling #{message.id} #{scheduled_time}")
+        scheduler.at scheduled_time.to_s do
+          logger.debug("### sending #{message.id}")
+          sse.write("#{message.id} #{message.start.latitude} #{message.start.longitude}")
+          sent_messages.add(message.id)
         end
       end
+
+      scheduler.at stream_endtime.to_s do
+        puts("### ending stream")
+        if scheduler
+          scheduler.shutdown
+        end
+        if sse
+          sse.write("CLOSING STREAM")
+          sse.close
+        end
+
+        if unsubscribe
+          unsubscribe.call
+        end
+      end
+
+      # TODO use a scheduler / threads or something
+      # next_message_time = messages.keys.min
+      # next_message_id = messages[next_message_time]&.id
+      # while Time.current < stream_endtime do
+      #   puts "Next message in #{(next_message_time - Time.current.to_i)/60} minutes at #{Time.at(next_message_time)}"
+      #   # Make sure the next message hasn't been sent yet
+      #   while sent_messages.include?(next_message_id)
+      #     messages.delete(next_message_time)
+      #     next_message_time = messages.keys.min
+      #     next_message_id = messages[next_message_time]&.id
+      #   end
+
+      #   if messages.size > 0 && (next_message_time - Time.current.to_i).abs < 1.minutes.to_i
+      #     # The message is close, go ahead and send it to the client
+      #     m = messages[next_message_time]
+      #     sse.write("#{m.id} #{m.start.latitude} #{m.start.longitude} #{next_message_time}")
+      #     sent_messages.add(m.id)
+      #     messages.delete(next_message_id)
+
+      #     # Get the next message
+      #     next_message_time = messages.keys.min
+      #     next_message_id = messages[next_message_time]&.id
+      #   end
+
+      #   if messages.size == 0 || (next_message_time - Time.current.to_i).abs > 30
+      #     sleep 30
+      #   end
+      # end
     ensure
-      sse.write("CLOSING STREAM")
-      sse.close
+      if scheduler
+        scheduler.shutdown
+      end
+      if sse
+        sse.write("CLOSING STREAM")
+        sse.close
+      end
+
+      if unsubscribe
+        unsubscribe.call
+      end
     end
 
     private
@@ -63,9 +107,7 @@ module Api::V1
         arrival_time = start_time + travel_time_seconds
         if Time.current.before?(arrival_time)
           puts("new #{distance}m; #{start_time} -> #{arrival_time} (now #{Time.current})")
-          message_arrival_times[arrival_time] = m
-        else
-          puts("old #{distance}m; #{start_time} -> #{arrival_time} (now #{Time.current})")
+          message_arrival_times[arrival_time.to_i] = m
         end
       end
       message_arrival_times
