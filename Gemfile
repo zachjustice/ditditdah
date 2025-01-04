@@ -54,7 +54,13 @@ gem "activerecord-postgis-adapter", git: "https://github.com/rgeo/activerecord-p
 # https://github.com/rgeo/rgeo-activerecord/wiki/Spatial-Factory-Store
 # gem 'rgeo-activerecord'
 
+# Useful for getting the end position given a start position, heading, and distance
 gem "geokit"
+
+# Objects created by this factory, rgeo's ffi factory, give access to low-level geos objects that can be manipulated using ffi-geos's api.
+# (which itself is basically thin wrappers around the libgeos C api calls).
+# This is all used to get the nearest point on a line given some other point somewhere else.
+gem "ffi-geos"
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem

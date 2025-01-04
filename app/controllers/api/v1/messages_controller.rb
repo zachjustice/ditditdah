@@ -11,8 +11,8 @@ module Api::V1
       true_heading = message_params[:true_heading]
 
       start_point = Geokit::LatLng.new(lat, long)
-      end_point = self.calculate_end_point(start_point, true_heading, self.MESSAGE_DISTANCE_MI)
-      bounding_box = self.calculate_message_bounds(start_point, end_point, self.MESSAGE_RADIUS_MI)
+      end_point = start_point.endpoint(true_heading, MessageConstants::MESSAGE_DISTANCE_METERS)
+      bounding_box = self.calculate_message_bounds(start_point, end_point, MessageConstants::MESSAGE_RADIUS_METERS)
 
       factory = RGeo::Geographic.spherical_factory(srid: 4326)
       message = current_user.messages.new(
@@ -36,17 +36,25 @@ module Api::V1
     def show
       message = current_user.messages.find_by(id: params[:id])
       start_point = Geokit::LatLng.new(message.start.latitude, message.start.longitude)
-      current_position = calculate_current_position(message.created_at, start_point, message.true_heading, self.MESSAGE_SPEED_MPH, self.MESSAGE_DISTANCE_MI) || message.end
+      current_position = GeoCalculations.calculate_current_position(message.created_at, start_point, message.true_heading, MessageConstants::MESSAGE_SPEED_MPS, MessageConstants::MESSAGE_DISTANCE_METERS) || message.end
 
       # TODO calculate current position of the signal
       if message
         render json: {
           status: { code: 200, message: "Success." },
           data: MessageSerializer.new(message).serializable_hash[:data][:attributes].merge({
+            start: {
+              lat: message.start.latitude,
+              long: message.start.longitude
+            },
             current_position: {
               lat: current_position.latitude,
               long: current_position.longitude,
               timestamp: Time.now.utc.iso8601
+            },
+            end: {
+              lat: message.end.latitude,
+              long: message.end.longitude
             }
           })
         }
@@ -59,24 +67,8 @@ module Api::V1
 
     private
 
-    def MESSAGE_DISTANCE_MI
-      @MESSAGE_DISTANCE_MI ||= 1000
-    end
-
-    def MESSAGE_RADIUS_MI
-      @MESSAGE_RADIUS_MIS ||= 1
-    end
-
-    def MESSAGE_SPEED_MPH
-      @MESSAGE_SPEED_MPH ||= 160
-    end
-
-    # TODO move calculate_* functions to some sort of geo library
-    def calculate_end_point(start_point, true_heading, distance)
-      start_point.endpoint(true_heading, distance)
-    end
-
     def calculate_message_bounds(start_point, end_point, message_radius)
+      # TODO add distance before and after endpoint to bounding box
       factory = RGeo::Geographic.spherical_factory(srid: 4326)
       bearing = start_point.heading_to(end_point)
       bearing_left = (bearing - 90) % 360
@@ -98,19 +90,6 @@ module Api::V1
           factory.point(start_left.lng, start_left.lat)  # Close the polygon
         ])
       )
-    end
-
-    def calculate_current_position(start_time, start_point, bearing, speed_mph, max_distance)
-      elapsed_time_seconds = Time.now - Time.parse(start_time.to_s)
-      miles_per_hour_to_miles_per_second = 1.0 / 3600.0
-      distance_traveled_miles = elapsed_time_seconds * speed_mph * miles_per_hour_to_miles_per_second
-
-      current_position = nil
-      if distance_traveled_miles < max_distance
-        current_position = start_point.endpoint(bearing, distance_traveled_miles)
-      end
-
-      current_position
     end
   end
 end
