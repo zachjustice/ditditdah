@@ -2,9 +2,12 @@ class MessageBroadcastJob < ApplicationJob
   queue_as :default
 
   def perform(message)
-    geohash = GeoHash.encode(message.start.latitude, message.start.longitude, MessageConstants::GEOHASH_LENGTH)
-    logger.debug("Sending message to geohash #{geohash} for #{message.id}")
-    MessagesChannel.broadcast_to geohash, render(message)
+    cutoff_time = Time.current - (MessageConstants::MESSAGE_DISTANCE_METERS / MessageConstants::MESSAGE_SPEED_MPS)
+    users = UserLocation.containing_point(message.id, cutoff_time).all
+    logger.info("Broadcasting message to #{users.size} user#{"s" if users.size > 1}")
+    users.each do |u|
+      MessagesChannel.broadcast_to u.user_id, render(message)
+    end
   end
 
   private
