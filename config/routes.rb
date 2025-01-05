@@ -29,7 +29,8 @@ Rails.application.routes.draw do
       put "/users/location", to: "user_locations#update"
       delete "/users/location", to: "user_locations#delete"
       get "/messages/:id", to: "messages#show"
-      resource :messages, only: [ :update ]
+      get "/messages", to: "messages#index"
+      put "/messages", to: "messages#update"
 
       # TODO delete
       authenticate do

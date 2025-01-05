@@ -63,7 +63,48 @@ module Api::V1
       end
     end
 
+    def index
+      lat, long = params[:lat], params[:long]
+      upcoming = self.get_upcoming_messages(lat, long)
+      render json: {
+        status: { code: 200, message: "Success" },
+        data: { upcoming: upcoming }
+      }, status: :ok
+    end
+
     private
+
+    def get_upcoming_messages(user_lat, user_long)
+      cutoff_time = Time.current - (MessageConstants::MESSAGE_DISTANCE_METERS / MessageConstants::MESSAGE_SPEED_MPS)
+      messages = Message.containing_point(user_lat, user_long, cutoff_time).all
+
+      upcoming = messages.map do |m|
+        nearest_point = GeoCalculations.nearest_point_on_line(m.start.latitude, m.start.longitude, m.end.latitude, m.end.longitude, user_lat, user_long)
+
+        distance = m.start.distance(nearest_point)
+        travel_time_seconds = distance / MessageConstants::MESSAGE_SPEED_MPS
+        start_time = Time.parse(m.created_at.to_s)
+        arrival_time = start_time + travel_time_seconds
+
+        if Time.current.before?(arrival_time)
+          {
+            id: m.id,
+            start: {
+              lat: m.start.latitude,
+              long: m.start.longitude
+            },
+            speed_mps: MessageConstants::MESSAGE_SPEED_MPS,
+            true_heading: m.true_heading,
+            created_at: m.created_at,
+            arrive_at: arrival_time
+          }
+        else
+          nil
+        end
+      end
+
+      upcoming.compact
+    end
 
     def calculate_message_bounds(start_point, end_point, message_radius)
       # TODO add distance before and after endpoint to bounding box
