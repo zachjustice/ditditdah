@@ -13,12 +13,19 @@ class MessageBroadcastJob < ApplicationJob
   private
   def render(message)
     {
-      id: message.id,
-      start: {
-        lat: message.start.latitude,
-        long: message.start.longitude },
-      true_heading: message.true_heading,
-      created_at: message.created_at
+      messageType: "MESSAGE_SENT",
+      version: 1,
+      sentAt: Time.current,
+      payload: {
+        id: message.id,
+        start: {
+          lat: message.start.latitude,
+          long: message.start.longitude
+        },
+        speed_mps: MessageConstants::MESSAGE_SPEED_MPS,
+        true_heading: message.true_heading,
+        created_at: message.created_at
+      }
     }
   end
 end
