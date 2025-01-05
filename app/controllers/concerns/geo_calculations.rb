@@ -11,6 +11,9 @@ class GeoCalculations
     current_position
   end
 
+  def self.intersects?(start_line_lat, start_line_long, end_line_lat, end_line_long, point_lat, point_long)
+  end
+
   def self.nearest_point_on_line(start_line_lat, start_line_long, end_line_lat, end_line_long, point_lat, point_long)
     # Taken from: https://groups.google.com/g/rgeo-users/c/e1FgzpPISs8
 

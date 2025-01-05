@@ -26,8 +26,12 @@ Rails.application.routes.draw do
 
   namespace :api do
     namespace :v1 do
+      put "/users/location", to: "user_locations#update"
+      delete "/users/location", to: "user_locations#delete"
       get "/messages/:id", to: "messages#show"
       resource :messages, only: [ :update ]
+
+      # TODO delete
       authenticate do
         get "/receive", to: "receive#index"
       end

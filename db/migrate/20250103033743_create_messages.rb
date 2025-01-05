@@ -6,7 +6,7 @@ class CreateMessages < ActiveRecord::Migration[8.0]
       t.st_point :start, geographic: true, null: false
       t.st_point :end, geographic: true, null: false
       t.st_polygon :bbox, geographic: true, null: false
-      t.references :user, null: false, foreign_key: true
+      t.references :user, null: false, type: :uuid, foreign_key: true
 
       t.timestamps
 

@@ -14,11 +14,10 @@ module Api::V1
       end_point = start_point.endpoint(true_heading, MessageConstants::MESSAGE_DISTANCE_METERS)
       bounding_box = self.calculate_message_bounds(start_point, end_point, MessageConstants::MESSAGE_RADIUS_METERS)
 
-      factory = RGeo::Geographic.spherical_factory(srid: 4326)
       message = current_user.messages.new(
         true_heading: true_heading,
-        start: factory.point(long, lat), # rgeo factory point takes x,y which is long, lat NOT lat, long
-        end: factory.point(end_point.longitude, end_point.latitude), # rgeo factory point takes x,y which is long, lat NOT lat, long
+        start: Geo.point(long, lat), # rgeo factory point takes x,y which is long, lat NOT lat, long
+        end: Geo.point(end_point.longitude, end_point.latitude), # rgeo factory point takes x,y which is long, lat NOT lat, long
         bbox: bounding_box,
         contents: message_params[:contents],
       )
@@ -68,7 +67,7 @@ module Api::V1
 
     def calculate_message_bounds(start_point, end_point, message_radius)
       # TODO add distance before and after endpoint to bounding box
-      factory = RGeo::Geographic.spherical_factory(srid: 4326)
+      factory = Geo.factory
       bearing = start_point.heading_to(end_point)
       bearing_left = (bearing - 90) % 360
       bearing_right = (bearing + 90) % 360
@@ -82,17 +81,13 @@ module Api::V1
 
       factory.polygon(
         factory.linear_ring([
-          factory.point(start_left.lng, start_left.lat), # Start Left
-          factory.point(end_left.lng, end_left.lat),     # End Left
-          factory.point(end_right.lng, end_right.lat),   # End Right
-          factory.point(start_right.lng, start_right.lat), # Start Right
-          factory.point(start_left.lng, start_left.lat)  # Close the polygon
+          Geo.point(start_left.lng, start_left.lat), # Start Left
+          Geo.point(end_left.lng, end_left.lat),     # End Left
+          Geo.point(end_right.lng, end_right.lat),   # End Right
+          Geo.point(start_right.lng, start_right.lat), # Start Right
+          Geo.point(start_left.lng, start_left.lat)  # Close the polygon
         ])
       )
-    end
-
-    def event_store
-      Rails.configuration.event_store
     end
   end
 end
