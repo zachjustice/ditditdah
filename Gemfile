@@ -76,4 +76,4 @@ group :development, :test do
   # Omakase Ruby styling [https://github.com/rails/rubocop-rails-omakase/]
   gem "rubocop-rails-omakase", require: false
 end
-gem "rails_event_store", "~> 2.15.0"
+gem "rails_event_store", "~> 2.16.0"
